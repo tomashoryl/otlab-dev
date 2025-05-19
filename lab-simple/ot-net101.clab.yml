@@ -1,0 +1,80 @@
+---
+name: ot-net101
+
+mgmt:
+  network: ot-net101
+  ipv4-subnet: 10.9.11.0/24
+
+topology:
+  defaults:
+    kind: mikrotik_ros
+    image: ghcr.io/narrowin/vrnetlab_mikrotik_routeros:7.18
+  
+  kinds:
+    linux:
+      image: ghcr.io/srl-labs/network-multitool
+
+  nodes:
+    gw:
+      kind: mikrotik_ros
+      mgmt-ipv4: 10.9.11.11
+      startup-config: clab-ot-net101-gw/clab-ot-net101-gw.cfg.backup.rsc
+    sw-dist:
+      kind: mikrotik_ros
+      mgmt-ipv4: 10.9.11.12
+      startup-config: clab-ot-net101-sw-dist/clab-ot-net101-sw-dist.cfg.backup.rsc
+    sw-acc1:
+      kind: mikrotik_ros
+      mgmt-ipv4: 10.9.11.13
+      startup-config: clab-ot-net101-sw-acc1/clab-ot-net101-sw-acc1.cfg.backup.rsc
+    sw-acc2:
+      kind: mikrotik_ros
+      mgmt-ipv4: 10.9.11.14
+      startup-config: clab-ot-net101-sw-acc2/clab-ot-net101-sw-acc2.cfg.backup.rsc
+    internet:
+      kind: linux
+      mgmt-ipv4: 10.9.11.51
+      exec:
+        - ip address add 1.1.1.1/24 dev eth1
+        - ip route add 10.0.0.0/8 via 1.1.1.2 dev eth1
+        - sudo sh -c 'echo "nameserver 1.1.1.2" > /etc/resolv.conf'
+        - sudo sh -c 'echo "127.0.0.1 localhost" > /etc/hosts'
+    host1:
+      kind: linux
+      mgmt-ipv4: 10.9.11.52
+      exec:
+        - ip address add 10.10.0.11/24 dev eth1
+        - ip route add 1.0.0.0/8 via 10.10.0.1 dev eth1
+        - ip route add 10.0.0.0/8 via 10.10.0.1 dev eth1
+        - sudo sh -c 'echo "nameserver 10.10.0.1" > /etc/resolv.conf'
+        - sudo sh -c 'echo "127.0.0.1 localhost" > /etc/hosts'
+    host2:
+      kind: linux
+      mgmt-ipv4: 10.9.11.53
+      exec:
+        - ip address add 10.20.0.12/24 dev eth1
+        - ip route add 1.0.0.0/8 via 10.20.0.1 dev eth1
+        - ip route add 10.0.0.0/8 via 10.20.0.1 dev eth1
+        - sudo sh -c 'echo "nameserver 10.20.0.1" > /etc/resolv.conf'
+        - sudo sh -c 'echo "127.0.0.1 localhost" > /etc/hosts'
+    host3:
+      kind: linux
+      mgmt-ipv4: 10.9.11.54
+      exec:
+        - ip address add 10.10.0.13/24 dev eth1
+        - ip route add 1.0.0.0/8 via 10.10.0.1 dev eth1
+        - ip route add 10.0.0.0/8 via 10.10.0.1 dev eth1
+        - sudo sh -c 'echo "nameserver 10.10.0.1" > /etc/resolv.conf'
+        - sudo sh -c 'echo "127.0.0.1 localhost" > /etc/hosts'
+
+  links:
+    - endpoints: ["gw:ether12", "sw-dist:ether12"]
+    - endpoints: ["gw:ether11", "sw-dist:ether11"]
+    - endpoints: ["gw:ether2", "internet:eth1"]
+    - endpoints: ["sw-dist:ether10", "sw-acc1:ether12"]
+    - endpoints: ["sw-dist:ether9", "sw-acc1:ether11"]
+    - endpoints: ["sw-dist:ether8", "sw-acc2:ether12"]
+    - endpoints: ["sw-acc1:ether10", "sw-acc2:ether11"]
+    - endpoints: ["sw-acc1:ether2", "host1:eth1"]
+    - endpoints: ["sw-acc1:ether3", "host2:eth1"]
+    - endpoints: ["sw-acc2:ether2", "host3:eth1"]
